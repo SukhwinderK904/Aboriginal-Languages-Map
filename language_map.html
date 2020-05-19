@@ -1,0 +1,140 @@
+<html>
+  <head>
+    <meta http-equiv="Access-Control-Allow-Origin" content="*"/>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script>
+    var $resultcode="";
+    var $resultarray={};
+    $(document).ready(function(){
+    $.ajax( {
+        url: "http://localhost:8080/getlanguage",
+      	method: "get",
+      	dataType: "text" // force the returned result as a string for printing
+      })
+      .done( function(msg) {
+        var $myarray = eval(msg);
+        var $answer = '<select id="services" name="list">';
+        for (var i = 0, l=$myarray.length; i < l; i++){
+          $answer = $answer + '<option value="'+$myarray[i].ServiceID+'">'+$myarray[i].ServiceID+': '+$myarray[i].Service+'</option>';
+        }
+          $answer=$answer+"</select>";
+          $("#myselect").html($answer);
+      });
+
+    $("#submit").click(function(){
+        var $chosenval=$('#services').val();
+        $.ajax( {
+      		url: "http://localhost:8080/getlocation?langlocation="+$chosenval,
+      		method: "get",
+      		dataType: "text" // force the returned result as a string for printing
+      	})
+        .done( function(msg) {
+          $resultarray = eval(msg);
+	  if ($chosenval == 1){
+          $resultcode = "<table class='mytable'><thead><tr><th>Code</th><th>Language</th><th>Url</th><th>Latitude</th><th>Longtitude</th></tr></thead><tbody><tr>"
+          }else{
+          $resultcode = "<table class='mytable'><thead><tr><th>Code</th><th>English</th><th>Indigenous Translation</th><th>Pronounciation</th><th>Language</th></tr></thead><tbody><tr>"
+	  }
+          for (var i = 0, l=$resultarray.length; i < l; i++){
+	 	if ($chosenval ==1) {
+          	$resultcode=$resultcode+"<tr class='resultrow'><td>"+$resultarray[i].language_code+"</td><td>"+$resultarray[i].language_name+"</td><td><a href="+$resultarray[i].uri+">"+$resultarray[i].language_name+"</a></td><td>"+$resultarray[i].latitude+"</td><td>"+$resultarray[i].longitude+"</td></tr>"
+		}else{
+		$resultcode=$resultcode+"<tr class='resultrow'><td>"+$resultarray[i].language_code+"</td><td>"+$resultarray[i].english+"</td><td>"+$resultarray[i].indigenous_language+"</td><td>"+$resultarray[i].pronunciation+"</td><td>"+$resultarray[i].language_name+"</td></tr>"
+		}
+          }
+          $resultcode=$resultcode+"</tbody></table>";
+          $("#result").html($resultcode);
+	  if ($chosenval == 1){
+          $("#map").css("visibility","visible");
+          initMap($resultarray);
+	  }else{$("#map").css("visibility","hidden");}
+        });
+      });
+    });
+    </script>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+  </head>
+  <style>
+   #result table.mytable thead tr {background-color: black; color: white;font-family: 'Roboto', sans-serif;}
+   #result .resultrow:nth-child(even) {background-color: #eee}
+   #result tr.resultrow {font-size:10px; font-family: 'Roboto', sans-serif;}
+   #result table.mytable thead tr th {padding: 6px 4px}
+   #result tr.resultrow td {padding: 6px 4px}
+   #headerwrapper{background-color:#888; color:white; font-family: 'Roboto',font-size:12px, sans-serif;padding: 40px;}
+   #infotexthead{background-color:#800000; color:white; font-family: 'Roboto',font-size:12px, sans-serif;padding: 40px;}
+  </style>
+  <body>
+    <div id="infotexthead" align="center">Aboriginal Language Map</div>
+    <div id="headerwrapper">
+      <div id="infotext" align="center">Choose an option from the dropdown list below:</div>
+      <br>
+      <div align="center">
+          <form>
+              <div id="myselect"></div>
+	      <br>
+              <input id="submit" type="button" value="Submit">
+          </form>
+	  <hr style="margin-top:35px">
+      </div>
+    </div>
+
+
+    <div id="resultwrapper" align="center">
+      <div id="result"></div>
+    </div>
+
+    <div id="mapwrapper" align="center">
+      <div id="map" style="visibility:hidden;width:97%; height:100%;"></div>
+    </div>
+
+    <script>
+        var map;
+        var InforObj = [];
+        function closeOtherInfo() {
+            if (InforObj.length > 0) {
+                /* detach the info-window from the marker ... undocumented in the API docs */
+                InforObj[0].set("marker", null);
+                /* and close it */
+                InforObj[0].close();
+                /* blank the array */
+                InforObj.length = 0;
+            }
+        };
+
+        function initMap($results) {
+          map = new google.maps.Map(document.getElementById('map'), {
+            center: {lat: -20.917574, lng: 142.702789},
+            zoom: 6
+          });
+          for (var i = 0, l=$results.length; i < l; i++){
+
+            var contentString = '<div id="content">'+
+            '<h1>Language: '+$results[i].language_name+'</h1>'+
+	    '<p>Code: '+$results[i].language_code+'</p>'+
+            '<p><a href="'+$results[i].uri+'">'+$results[i].uri+'</a></p>'
+            '</div>';
+
+            const infowindow = new google.maps.InfoWindow({
+                content: contentString,
+                maxWidth: 200
+            });
+
+            const marker = new google.maps.Marker({
+              map: map,
+              position: {lat: parseFloat($results[i].latitude), lng: parseFloat($results[i].longitude)},
+              title: $results[i].language_name
+            });
+
+            marker.addListener('click', function () {
+              closeOtherInfo();
+              infowindow.open(marker.get('map'), marker);
+              InforObj[0] = infowindow;
+            });
+          }
+        };
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCO3hE4bE7WV7mGuXL4kn9caoWI44tD8Ic&callback=initMap"
+      async defer></script>
+  </body>
+</html>
+</html>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<services>
+  <service>
+    <ServiceID>1</ServiceID>
+    <ServiceName>Languages</ServiceName>
+  </service>
+  <service>
+    <ServiceID>2</ServiceID>
+    <ServiceName>Dictionary</ServiceName>
+  </service>
+</services>
